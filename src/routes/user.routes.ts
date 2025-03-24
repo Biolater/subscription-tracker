@@ -1,16 +1,12 @@
 import { Router } from "express";
+import { getUser, getUsers } from "../controllers/user.controller.ts";
+import { authorize } from "../middlewares/auth.middleware.ts";
 
 const userRouter = Router();
 
-userRouter.get("/", (req, res) => {
-    res.status(200).json({ message: "GET all users" });
-});
+userRouter.get("/", getUsers)
 
-userRouter.get("/:id", (req, res) => {
-    const { id } = req.params
-    res.status(200).json({ message: `GET User ${id} information` });
-});
-
+userRouter.get("/:id", authorize, getUser)
 userRouter.post("/", (req, res) => {
     res.status(200).json({ message: "CREATE user" });
 });
