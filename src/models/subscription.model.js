@@ -1,19 +1,6 @@
-import mongoose, { Document, Types } from "mongoose";
+import mongoose from "mongoose";
 
-interface ISubscription extends Document {
-    name: string;
-    price: number;
-    currency: 'USD' | 'EUR' | 'GBP' | 'AZN' | 'TRY';
-    frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
-    category: 'sports' | 'news' | 'entertainment' | 'lifestyle' | 'technology' | 'finance' | 'politics' | 'other';
-    paymentMethod: string;
-    status: 'active' | 'cancelled' | 'expired';
-    startDate: Date;
-    renewalDate: Date;
-    user: Types.ObjectId;
-}
-
-const subscriptionSchema = new mongoose.Schema<ISubscription>({
+const subscriptionSchema = new mongoose.Schema({
     name: {
         type: String,
         required: [true, "Subscription name is required"],
@@ -55,7 +42,7 @@ const subscriptionSchema = new mongoose.Schema<ISubscription>({
         type: Date,
         required: true,
         validate: {
-            validator: function (value: Date): boolean {
+            validator: function (value) {
                 return value <= new Date();
             },
             message: 'Start date must be in the past'
@@ -64,7 +51,7 @@ const subscriptionSchema = new mongoose.Schema<ISubscription>({
     renewalDate: {
         type: Date,
         validate: {
-            validator: function (this: ISubscription, value: Date): boolean {
+            validator: function (value) {
                 return value > this.startDate;
             },
             message: 'Renewal date must be after the start date'
@@ -78,7 +65,7 @@ const subscriptionSchema = new mongoose.Schema<ISubscription>({
     }
 }, { timestamps: true });
 
-subscriptionSchema.pre<ISubscription>('save', function (next) {
+subscriptionSchema.pre("save", function (next) {
     if (!this.renewalDate) {
         const renewalPeriods = {
             daily: 1,
@@ -86,17 +73,17 @@ subscriptionSchema.pre<ISubscription>('save', function (next) {
             monthly: 30,
             yearly: 365,
         };
-        this.renewalDate = new Date(this.startDate)
+        this.renewalDate = new Date(this.startDate);
         const frequency = this.frequency;
         const newRenewalDate = this.startDate.getDate() + renewalPeriods[frequency];
         this.renewalDate.setDate(newRenewalDate);
-    };
-
-    if(this.renewalDate < new Date()){
-        this.status = 'expired'
     }
 
-    next()
-})
+    if(this.renewalDate < new Date()){
+        this.status = 'expired';
+    }
 
-export default mongoose.model<ISubscription>("Subscription", subscriptionSchema);
+    next();
+});
+
+export default mongoose.model("Subscription", subscriptionSchema);

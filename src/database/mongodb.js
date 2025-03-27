@@ -1,13 +1,13 @@
 import mongoose from "mongoose";
-import { DB_URI } from "../config/env.ts";
+import { DB_URI } from "../config/env.js";
 
 if (!DB_URI) {
     throw new Error("DB_URI is not defined");
-};
+}
 
 const connectDB = async () => {
     try {
-        await mongoose.connect(DB_URI!);
+        await mongoose.connect(DB_URI);
         console.log("Connected to MongoDB");
     } catch (error) {
         console.error("Error connecting to MongoDB:", error);
