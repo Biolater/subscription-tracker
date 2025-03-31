@@ -102,7 +102,7 @@ export const signIn = async (req, res, next) => {
 
 export const signOut = async (req, res) => {
   try {
-    res.status(201).json({ message: "User signed up successfully" });
+    res.status(201).json({ message: "User signed out successfully" });
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
   }
