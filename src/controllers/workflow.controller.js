@@ -23,49 +23,19 @@ export const sendReminders = serve(async (context) => {
     return;
   }
 
-  for (const dayBefore of REMINDERS) {
-    const reminderDate = renewalDate.subtract(dayBefore, "day");
-
-    if (reminderDate.isBefore(today)) {
-      continue;
+  for (const daysBefore of REMINDERS) {
+    const reminderDate = renewalDate.subtract(daysBefore, "day");
+    if (reminderDate.isAfter(today)) {
+      await sleepUntilReminder(context, `reminder-${daysBefore}`, reminderDate);
     }
-
-    await sleepUntilReminder(context, `reminder-${dayBefore}`, reminderDate);
-    await sendReminder(context, subscription, reminderDate);
+    await triggerReminder(context, `reminder-${daysBefore}`);
   }
 });
 
 const fetchSubscription = async (context, subscriptionId) => {
-  // Fetch subscription outside of context.run to avoid capturing MongoDB connections
-  let subscription;
-  try {
-    // Get the subscription data
-    const result = await subscriptionModel.findById(subscriptionId)
-      .populate("user", "name email")
-      .lean();
-    
-    // If no result, return null
-    if (!result) return null;
-    
-    // Create a serializable clean object with only the data we need
-    subscription = {
-      _id: result._id.toString(),
-      name: result.name,
-      status: result.status,
-      renewalDate: result.renewalDate,
-      user: {
-        _id: result.user._id.toString(),
-        name: result.user.name,
-        email: result.user.email
-      }
-    };
-  } catch (error) {
-    console.error("Error fetching subscription:", error);
-    return null;
-  }
-  
-  // Now use context.run with the clean serializable object
-  return await context.run("fetch-subscription", () => subscription);
+  return await context.run("get-subscription", async () => {
+    return subscriptionModel.findById(subscriptionId).populate("user");
+  });
 };
 
 const sleepUntilReminder = async (context, label, date) => {
@@ -73,8 +43,8 @@ const sleepUntilReminder = async (context, label, date) => {
   await context.sleepUntil(label, date.toDate());
 };
 
-const sendReminder = async (context, subscription, reminderDate) => {
-  console.log(
-    `Sending reminder for ${subscription.user.name} at ${reminderDate}`
-  );
+const triggerReminder = async (context, label) => {
+  return await context.run(`Trigger reminder ${label}`, async () => {
+    console.log(`Triggering reminder ${label}`);
+  });
 };
